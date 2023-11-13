@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Projects
+{% endblock %}
+
+{% block main %}
+    <h1>Wedding Projects</h1>
+    {% for project in weddings %}
+        <a href="{{ url_for('project', project_id=project[0]) }}">
+            <img src="{{ url_for('static', filename='img/directory.png') }}" alt="Directory Icon" height="40" width="50">
+        </a>
+        <div>{{ project[3] }}</div>
+    {% endfor %}
+    <a href="{{ url_for('new_project') }}" class="new-project">
+        <img src="{{ url_for('static', filename='img/newDirectory.png') }}" alt="New Directory Icon" height="50" width="50">
+    </a>
+{% endblock %}

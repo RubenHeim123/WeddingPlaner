@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Project
+{% endblock %}
+
+{% block main %}
+<h1>Wedding Details</h1>
+<form action="/change_project" method="post">
+    <div class="mb-3">
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="title" name="title" placeholder="Title" value="{{ wedding[1] }}" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="bride_name" name="bride_name" placeholder="Bride name" value="{{ wedding[2] }}" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="groom_name" name="groom_name" placeholder="Groom name" value="{{ wedding[3] }}" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="location" name="location" placeholder="Location" value="{{ wedding[4] }}" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="date" name="date" placeholder="Date in format YYYY.MM.DD" value="{{ wedding[5] }}" type="text">
+    </div>
+    <button class="btn btn-primary" type="submit">Change values</button>
+</form>
+{% endblock %}

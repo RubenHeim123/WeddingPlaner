@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Guests
+{% endblock %}
+
+{% block main %}
+<h1>Guest List</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">First Name</th>
+            <th scope="col">Last Name</th>
+            <th scope="col">Respond</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for guest in guests %}
+            <tr>
+                <td>{{ guest[1] }}</td>
+                <td>{{ guest[2] }}</td>
+                <td>
+                    <input type="checkbox" name="rsvp" {% if guest[3] %}checked{% endif %} onchange="updateRSVP({{ guest[0] }})">
+                </td>
+                <td>
+                    <form action="{{ url_for('delete_guest', guest_id=guest[0]) }}" method="post">
+                        <button class="btn btn-danger delete-guest">
+                            <i class="fas fa-trash-alt"></i> Löschen
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<form action="/add_guest" method="post">
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="first_name" name="first_name" placeholder="First name" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="last_name" name="last_name" placeholder="Last name" type="text">
+    </div>
+    <button class="btn btn-primary" type="submit">Add guest</button>
+</form>
+{% endblock %}

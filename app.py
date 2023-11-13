@@ -26,10 +26,131 @@ def after_request(response):
     return response
 
 
+@app.route('/update_rsvp/<int:guest_id>', methods=['POST'])
+@login_required
+def update_rsvp(guest_id):
+    try:
+        is_checked = cur.execute("SELECT rsvp_checkbox FROM guest WHERE id = ?", (guest_id,)).fetchone()[0]
+        if is_checked == 0:
+            cur.execute('UPDATE guest SET rsvp_checkbox = 1 WHERE id = ?', (guest_id,))
+        else:
+            cur.execute('UPDATE guest SET rsvp_checkbox = 0 WHERE id = ?', (guest_id,))
+        return redirect("/guest")
+
+    except Exception as e:
+        return apology(f"{e}")
+    
+
+@app.route("/delete_guest/<int:guest_id>", methods=["POST"])
+@login_required
+def delete_guest(guest_id):
+    try:
+        cur.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/guest")
+
+
+@app.route("/add_guest", methods=["POST"])
+@login_required
+def add_guest():
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+
+    if not first_name and not last_name:
+        return apology("Write first and last name")
+
+    try:
+        guests = cur.execute("INSERT INTO guest (first_name, last_name, rsvp_checkbox, wedding_id) VALUES (?,?,?,?)", (first_name, last_name, 0, session["wedding_id"]))
+        db.commit()
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/guest")
+    
+    
+@app.route("/guest", methods=["GET"])
+@login_required
+def guests():
+    try:
+        guests = cur.execute("SELECT * FROM guest WHERE wedding_id = ?", (session["wedding_id"],)).fetchall()
+        print(guests)
+    except Exception as e:
+        return apology(f"{e}")
+    return render_template("guest.html", guests=guests)
+
+@app.route("/change_project", methods=["POST"])
+@login_required
+def change_project():
+
+    title = request.form.get("title")
+    bride_name = request.form.get("bride_name")
+    groom_name = request.form.get("groom_name")
+    location = request.form.get("location")
+    date = request.form.get("date")
+
+    try:
+        cur.execute("""
+            UPDATE wedding
+            SET title = ?, bride_name = ?, groom_name = ?, wedding_date = ?, location = ?
+            WHERE id = ? AND user_id = ?
+        """, (title, bride_name, groom_name, date, location, session["wedding_id"], session['user_id']))    
+    except Exception as e:
+        return apology(f"{e}")
+    
+    cur.execute("SELECT * FROM wedding WHERE title = ? AND bride_name = ? AND groom_name = ? AND wedding_date = ? AND location = ? AND user_id = ?", (title, bride_name, groom_name, date, location, session["user_id"]))
+    result = cur.fetchone()
+    session["wedding_id"] = result[0]
+    return redirect(f"/project/{result[0]}")
+
+
+@app.route("/project/<project_id>")
+@login_required
+def project(project_id):
+    try:
+        wedding = cur.execute("SELECT * FROM wedding WHERE id = ?", (project_id,)).fetchone()
+        session["wedding_id"] = wedding[0]
+    except Exception as e:
+        return apology(f"{e}")
+    return render_template("project.html", wedding=wedding)
+
+
+@app.route('/new_project', methods=["GET", "POST"])
+@login_required
+def new_project():
+    if request.method == "POST":
+        title = request.form.get("title")
+        bride_name = request.form.get("bride_name")
+        groom_name = request.form.get("groom_name")
+        location = request.form.get("location")
+        date = request.form.get("date")
+
+        if not title:
+            return apology("No title")
+        
+        if not bride_name and not groom_name:
+            return apology("Fill out a bride or a groom name")
+        
+        try:
+            cur.execute("INSERT INTO wedding (title, bride_name, groom_name, wedding_date, location, user_id) VALUES (?, ?, ?, ?, ?, ?)", (title, bride_name, groom_name, date, location, session["user_id"]))
+            db.commit()
+        except Exception as e:
+            return apology(f"{e}")
+
+        cur.execute("SELECT * FROM wedding WHERE title = ? AND bride_name = ? AND groom_name = ? AND wedding_date = ? AND location = ? AND user_id = ?", (title, bride_name, groom_name, date, location, session["user_id"]))
+        result = cur.fetchone()
+        session["wedding_id"] = result[0]
+
+        return render_template("project.html", wedding=result)
+    else:
+        return render_template("new_project.html")
+
+
 @app.route("/")
 @login_required
 def index():
-    return apology("TODO")
+    weddings = cur.execute("SELECT * FROM wedding WHERE user_id = ?", (session["user_id"],)).fetchall()
+    print(weddings)
+    return render_template("index.html", weddings=weddings)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
