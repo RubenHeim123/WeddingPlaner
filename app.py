@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from utils import apology, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -17,6 +17,7 @@ Session(app)
 db = sqlite3.connect("wedding.db", check_same_thread=False)
 cur = db.cursor()
 
+
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
@@ -24,23 +25,243 @@ def after_request(response):
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     return response
+ 
+
+"""
+Deletes a checklist item with the specified check_id.
+
+Parameters:
+- check_id (int): The id of the checklist item to be deleted.
+
+Returns:
+- Flask Response: A response object that redirects to the "/checklist" page.
+"""
+@app.route("/delete_checklist/<int:check_id>", methods=["POST"])
+@login_required
+def delete_checklist(check_id):
+    try:
+        cur.execute("DELETE FROM checklist WHERE id = ?", (check_id,))
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/checklist")
 
 
+"""
+Add a new checklist item to the database.
+
+Parameters:
+    None
+
+Returns:
+    redirect: A redirect to the "/checklist" page if the checklist item was successfully added.
+    apology: An apology message if an error occurred during the insertion of the checklist item into the database.
+
+Raises:
+    None
+"""
+@app.route("/add_checklist", methods=["POST"])
+@login_required
+def add_checklist():
+    item = request.form.get("item")
+    if not item:
+        return apology("Enter an item")
+    try:
+        cur.execute("INSERT INTO checklist (item, wedding_id, completed) VALUES (?,?,?)", (item, session["wedding_id"], False))
+        db.commit()
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/checklist")
+
+
+    """
+    Updates the check status of a checklist item.
+
+    Parameters:
+    check_id (int): The ID of the checklist item to update.
+
+    Returns:
+    None
+    """
+@app.route("/update_check/<int:check_id>", methods=["POST"])
+@login_required
+def update_check(check_id):
+    try:
+        is_checked = cur.execute("SELECT completed FROM checklist WHERE id = ? AND wedding_id = ?", (check_id, session["wedding_id"])).fetchone()[0]
+        if is_checked == 0:
+            cur.execute('UPDATE checklist SET completed = 1 WHERE id = ? AND wedding_id = ?', (check_id,session["wedding_id"]))
+        else:
+            cur.execute('UPDATE checklist SET completed = 0 WHERE id = ? AND wedding_id = ?', (check_id,session["wedding_id"]))
+        db.commit()
+        return redirect("/checklist")
+    except Exception as e:
+        return apology(f"{e}")
+
+
+
+"""
+Retrieves a checklist from the database for a specific wedding.
+
+Parameters:
+    None
+
+Returns:
+    A rendered template for the checklist.html page, containing the retrieved checklist.
+
+Raises:
+    Exception: If there is an error executing the SQL query.
+"""
+@app.route("/checklist", methods=["GET"])
+@login_required
+def checklist():
+    try:
+        checklist = cur.execute("SELECT * FROM checklist WHERE wedding_id = ?", (session["wedding_id"],)).fetchall()
+    except Exception as e:
+        return apology(f"{e}")
+    return render_template("checklist.html", checklist=checklist)
+
+
+"""
+Delete a transaction with the given ID.
+
+Parameters:
+    tr_id (int): The ID of the transaction to be deleted.
+
+Returns:
+    str: A message indicating the success or failure of the deletion.
+
+Raises:
+    Exception: If there is an error while deleting the transaction.
+
+Redirects:
+    /budget: If the transaction is successfully deleted.
+"""
+@app.route("/delete_tr/<int:tr_id>", methods=["POST"])
+@login_required
+def delete_tr(tr_id):
+    try:
+        cur.execute("DELETE FROM transactions WHERE id = ?", (tr_id,))
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/budget")
+
+
+"""
+Adds a new transaction to the database.
+
+Parameters:
+    None
+
+Returns:
+    None
+"""
+@app.route("/add_tr", methods=["POST"])
+@login_required
+def add_transaction():
+    date = request.form.get("date")
+    description = request.form.get("description")
+    amount = request.form.get("amount")
+    transaction_type = request.form.get("transaction_type")
+    if not date or not transaction_type or not amount:
+        return apology("Enter all fields")
+    if not amount.isdigit():
+        return apology("Amount must be a number")
+    amount = int(amount)
+    try:    
+        cur.execute("INSERT INTO transactions (date, description, amount, wedding_id, transaction_type) VALUES (?,?,?,?,?)", (date, description, amount, session["wedding_id"] ,transaction_type))
+        db.commit()
+    except Exception as e:
+        return apology(f"{e}")
+    return redirect("/budget")
+
+
+"""
+Retrieves the budget information for a wedding.
+
+Returns:
+    A rendered HTML template with the budget details.
+"""
+@app.route("/budget", methods=["GET"])
+@login_required
+def budget():
+    try:
+        transactions = cur.execute("SELECT * FROM transactions WHERE wedding_id = ? GROUP BY date", (session["wedding_id"],)).fetchall()
+
+        income_sum = sum(tr[3] for tr in transactions if tr[2] == 'income')
+
+        expenses_sum = sum(tr[3] for tr in transactions if tr[2] == 'expenses')
+
+        balance = income_sum - expenses_sum
+    except Exception as e:
+        return apology(f"{e}")
+    return render_template("budget.html", transactions=transactions, income_sum=income_sum, expenses_sum=expenses_sum, balance=balance)
+
+
+"""
+Retrieve the number of guests who have RSVPed for the wedding.
+
+Returns:
+    int: The number of guests who have RSVPed.
+
+Raises:
+    Exception: If there is an error executing the database query.
+"""
+@app.route("/get_rsp_number", methods=["GET"])
+@login_required
+def get_rsp_number():
+    try:
+        rsp_number = cur.execute("SELECT COUNT(*) FROM guest WHERE rsvp_checkbox = 1 AND wedding_id = ?", (session["wedding_id"],)).fetchone()[0]
+        return jsonify(rsp_number)
+    except Exception as e:
+        return apology(f"{e}")
+
+
+"""
+Updates the RSVP status of a guest.
+
+Parameters:
+    guest_id (int): The ID of the guest whose RSVP status needs to be updated.
+
+Returns:
+    None
+
+Raises:
+    Exception: If there is an error while updating the RSVP status.
+"""
 @app.route('/update_rsvp/<int:guest_id>', methods=['POST'])
 @login_required
 def update_rsvp(guest_id):
     try:
         is_checked = cur.execute("SELECT rsvp_checkbox FROM guest WHERE id = ?", (guest_id,)).fetchone()[0]
-        if is_checked == 0:
-            cur.execute('UPDATE guest SET rsvp_checkbox = 1 WHERE id = ?', (guest_id,))
-        else:
+        if is_checked == 1:
             cur.execute('UPDATE guest SET rsvp_checkbox = 0 WHERE id = ?', (guest_id,))
+        else:
+            cur.execute('UPDATE guest SET rsvp_checkbox = 1 WHERE id = ?', (guest_id,))
+        db.commit()
         return redirect("/guest")
-
+    
     except Exception as e:
         return apology(f"{e}")
     
 
+"""
+Deletes a guest from the database.
+
+Parameters:
+    guest_id (int): The ID of the guest to be deleted.
+
+Returns:
+    None
+
+Raises:
+    Exception: If an error occurs while deleting the guest.
+
+Redirects:
+    /guest: After successfully deleting the guest.
+
+Decorators:
+    @app.route("/delete_guest/<int:guest_id>", methods=["POST"])
+    @login_required
+"""
 @app.route("/delete_guest/<int:guest_id>", methods=["POST"])
 @login_required
 def delete_guest(guest_id):
@@ -51,6 +272,19 @@ def delete_guest(guest_id):
     return redirect("/guest")
 
 
+"""
+Adds a guest to the database.
+
+This function is called when a POST request is made to the "/add_guest" endpoint. It requires the user to be logged in.
+
+Parameters:
+    None
+
+Returns:
+    - If both the `first_name` and `last_name` parameters are missing, it returns an apology message.
+    - If the guest is successfully added to the database, it redirects the user to the "/guest" endpoint.
+    - If an error occurs during the database insertion, it returns an apology message with the error details.
+"""
 @app.route("/add_guest", methods=["POST"])
 @login_required
 def add_guest():
@@ -66,18 +300,40 @@ def add_guest():
     except Exception as e:
         return apology(f"{e}")
     return redirect("/guest")
-    
-    
+
+
+"""
+Retrieves the list of guests for a specific wedding and displays them on the guest page.
+
+Parameters:
+    None
+
+Returns:
+    render_template: A Flask function that renders the guest.html template with the following arguments:
+        - guests: A list of dictionaries containing guest information retrieved from the database.
+        - guest_number: An integer representing the total number of guests for the wedding.
+        - rsp_number: An integer representing the number of guests who have RSVP'd for the wedding.
+"""
 @app.route("/guest", methods=["GET"])
 @login_required
 def guests():
     try:
         guests = cur.execute("SELECT * FROM guest WHERE wedding_id = ?", (session["wedding_id"],)).fetchall()
-        print(guests)
+        rsp_number = cur.execute("SELECT * FROM guest WHERE rsvp_checkbox = 1 AND wedding_id = ?", (session["wedding_id"],)).fetchall()
     except Exception as e:
         return apology(f"{e}")
-    return render_template("guest.html", guests=guests)
+    return render_template("guest.html", guests=guests, guest_number=len(guests), rsp_number=len(rsp_number))
 
+
+"""
+Updates a wedding project with the provided information.
+
+Parameters:
+- None
+
+Returns:
+- None
+"""
 @app.route("/change_project", methods=["POST"])
 @login_required
 def change_project():
@@ -103,6 +359,15 @@ def change_project():
     return redirect(f"/project/{result[0]}")
 
 
+"""
+Renders the project page for a specific wedding.
+
+Parameters:
+- project_id (int): The ID of the project.
+
+Returns:
+- render_template (function): The rendered template for the project page.
+"""
 @app.route("/project/<project_id>")
 @login_required
 def project(project_id):
@@ -114,6 +379,38 @@ def project(project_id):
     return render_template("project.html", wedding=wedding)
 
 
+"""
+Create a new project.
+
+This function is the route handler for the '/new_project' endpoint. It is decorated with the '@app.route' decorator, which specifies the URL path and the HTTP methods that this route should respond to. It is also decorated with the '@login_required' decorator, which ensures that only authenticated users can access this route.
+
+Parameters:
+- None
+
+Returns:
+- If the request method is 'POST' and all the required fields are provided, it inserts a new record into the 'wedding' table of the database with the provided title, bride name, groom name, date, location, and the current user's ID. It then retrieves the inserted record from the database and stores the wedding ID in the session. Finally, it renders the 'project.html' template with the retrieved wedding record as the context.
+- If the request method is not 'POST', it renders the 'new_project.html' template.
+
+Throws:
+- If the request method is 'POST' and the 'title' field is not provided, it raises an 'apology' exception with the error message 'No title'.
+- If the request method is 'POST' and neither the 'bride_name' nor the 'groom_name' fields are provided, it raises an 'apology' exception with the error message 'Fill out a bride or a groom name'.
+- If any database error occurs during the insertion of the new record, it raises an exception with the error message.
+
+Note:
+- This function assumes that the following variables are defined and have the expected values:
+    - 'app' is the Flask application object.
+    - 'request' is the Flask request object.
+    - 'apology' is a function that renders an error page with an apology message.
+    - 'cur' is the database cursor object.
+    - 'db' is the database connection object.
+    - 'session' is the Flask session object.
+    - 'render_template' is a function that renders a template with the provided context.
+
+Example usage:
+- To create a new project, make a POST request to the '/new_project' endpoint with the required form fields.
+- To view the new project form, make a GET request to the '/new_project' endpoint.
+
+"""
 @app.route('/new_project', methods=["GET", "POST"])
 @login_required
 def new_project():
@@ -145,11 +442,17 @@ def new_project():
         return render_template("new_project.html")
 
 
+"""
+Retrieves all weddings associated with the logged-in user from the database and
+renders the index.html template with the retrieved weddings.
+
+Returns:
+    str: The rendered HTML content of the index.html template.
+"""
 @app.route("/")
 @login_required
 def index():
     weddings = cur.execute("SELECT * FROM wedding WHERE user_id = ?", (session["user_id"],)).fetchall()
-    print(weddings)
     return render_template("index.html", weddings=weddings)
 
 @app.route("/login", methods=["GET", "POST"])

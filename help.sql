@@ -21,21 +21,20 @@
 --     completed BOOLEAN NOT NULL,
 --     FOREIGN KEY (wedding_id) REFERENCES wedding(id)
 -- );
--- CREATE TABLE IF NOT EXISTS transactions (
---     id INTEGER PRIMARY KEY,
---     wedding_id INTEGER NOT NULL,
---     transaction_type TEXT NOT NULL, 
---     amount INTEGER NOT NULL,
---     description TEXT,
---     date DATE NOT NULL,
---     icon TEXT, -- Pfad oder Bezeichnung des Icons
---     FOREIGN KEY (wedding_id) REFERENCES wedding(id)
--- );
-CREATE TABLE guest (
+CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY,
-    first_name TEXT,
-    last_name TEXT,
-    rsvp_checkbox INTEGER,
-    wedding_id INTEGER,
-    FOREIGN KEY (wedding_id) REFERENCES wedding (id)
+    wedding_id INTEGER NOT NULL,
+    transaction_type TEXT NOT NULL, 
+    amount INTEGER NOT NULL,
+    description TEXT,
+    date DATE NOT NULL,
+    FOREIGN KEY (wedding_id) REFERENCES wedding(id)
 );
+-- CREATE TABLE guest (
+--     id INTEGER PRIMARY KEY,
+--     first_name TEXT,
+--     last_name TEXT,
+--     rsvp_checkbox INTEGER,
+--     wedding_id INTEGER,
+--     FOREIGN KEY (wedding_id) REFERENCES wedding (id)
+-- );

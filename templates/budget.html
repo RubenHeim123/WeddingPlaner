@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Budget
+{% endblock %}
+
+{% block main %}
+<h1>Budget List</h1>
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Description</th>
+                <th scope="col">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tr in transactions %}
+                <tr>
+                    <td>{{ tr[5] }}</td>
+                    <td>{{ tr[4] }}</td>
+                    <td>{% if tr[2] == 'income' %}{{ tr[3] }}{% elif tr[2] == 'expenses' %}-{{ tr[3] }}{% else %}white{% endif %}</td>
+                    <td>
+                        <form action="{{ url_for('delete_tr', tr_id=tr[0]) }}" method="post">
+                            <button class="btn delete-guest">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div>
+    <p>Summe der Einnahmen: {{ income_sum }}</p>
+    <p>Summe der Ausgaben: {{ expenses_sum }}</p>
+    <p>Differenz: {{ balance }}</p>
+</div>
+<form action="/add_tr" method="post">
+    <div class="mb-3">
+        <input class="form-control mx-auto custom-input" id="date" name="date" placeholder="Date in format YYYY.MM.DD" type="date">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto custom-input" id="description" name="description" placeholder="Description" type="text">
+    </div>
+    <div class="mb-3">
+        <select class="form-control mx-auto custom-input mb-3 custom-dropdown" id="transaction_type" name="transaction_type">
+            <option value="income">Income</option>
+            <option value="expenses">Expenses</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto custom-input" id="amount" name="amount" placeholder="Amount" type="number">
+    </div>
+    <button class="btn btn-primary" type="submit">Add Transaction</button>
+</form>
+{% endblock %}

@@ -1,7 +1,38 @@
 .new-project{
     opacity: 0.5;
+    margin: 10px;
 }
 
 img {
-    margin: 100px;
+    margin: 10px;
+}
+
+.custom-dropdown {
+    width: 100%; 
+}
+
+.custom-checkbox {
+    transform: scale(2); 
+    margin-left: 10px;
+}
+
+.custom-container {
+    align-items: center;
+    width: 50%;
+}
+
+.custom-input {
+    width: 15%;
+}
+
+#background-img {
+    background-image: url("/static/img/background.jpg");
+    background-size: cover;
+    background-position: center;
+    min-height: 80vh; 
+    color: white;
+}
+
+.project-item {
+    margin: 10px;
 }

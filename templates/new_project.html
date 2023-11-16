@@ -5,22 +5,32 @@
 {% endblock %}
 
 {% block main %}
-<form action="/new_project" method="post">
-    <div class="mb-3">
-        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="title" name="title" placeholder="Title" type="text">
+<div class="row">
+    <div class="col-md-3">
+        <img src="/static/img/bride.jpg" alt="Bride" class="img-fluid h-100 w-100">
     </div>
-    <div class="mb-3">
-        <input class="form-control mx-auto w-auto" id="bride_name" name="bride_name" placeholder="Bride name" type="text">
+    <div class="col-md-6">
+        <form action="/new_project" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto custom-input" id="title" name="title" placeholder="Title" type="text">
+            </div>
+            <div class="mb-3">
+                <input class="form-control mx-auto custom-input" id="bride_name" name="bride_name" placeholder="Bride name" type="text">
+            </div>
+            <div class="mb-3">
+                <input class="form-control mx-auto custom-input" id="groom_name" name="groom_name" placeholder="Groom name" type="text">
+            </div>
+            <div class="mb-3">
+                <input class="form-control mx-auto custom-input" id="location" name="location" placeholder="Location" type="text">
+            </div>
+            <div class="mb-3">
+                <input class="form-control mx-auto custom-input" id="date" name="date" placeholder="Date in format YYYY.MM.DD" type="date">
+            </div>
+            <button class="btn btn-primary" type="submit">Create new wedding</button>
+        </form>
     </div>
-    <div class="mb-3">
-        <input class="form-control mx-auto w-auto" id="groom_name" name="groom_name" placeholder="Groom name" type="text">
+    <div class="col-md-3">
+        <img src="/static/img/groom.jpg" alt="Groom" class="img-fluid h-100 w-100">
     </div>
-    <div class="mb-3">
-        <input class="form-control mx-auto w-auto" id="location" name="location" placeholder="Location" type="text">
-    </div>
-    <div class="mb-3">
-        <input class="form-control mx-auto w-auto" id="date" name="date" placeholder="Date in format YYYY.MM.DD" type="text">
-    </div>
-    <button class="btn btn-primary" type="submit">Create new wedding</button>
-</form>
+</div>
 {% endblock %}
