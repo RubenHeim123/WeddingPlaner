@@ -574,18 +574,18 @@ def changepwd():
         if new_password != confirmation:
             return apology("Password and confirmation is not the same")
 
-        old_user = cur.execute("SELECT * FROM users WHERE username = ?", name).fetchone()
+        old_user = cur.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
 
         # Ensure username exists and password is correct
-        if len(old_user) != 1 or not check_password_hash(
-            old_user[0][2], old_password
+        if len(old_user) != 3 or not check_password_hash(
+            old_user[2], old_password
         ):
             return apology("invalid username and/or password", 403)
 
         db.execute(
             "UPDATE users SET hash = ? WHERE id = ?",
-            generate_password_hash(new_password),
-            old_user[0][0],
+            (generate_password_hash(new_password),
+            old_user[0])
         )
 
         return redirect("/")

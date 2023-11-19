@@ -21,15 +21,15 @@
 --     completed BOOLEAN NOT NULL,
 --     FOREIGN KEY (wedding_id) REFERENCES wedding(id)
 -- );
-CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY,
-    wedding_id INTEGER NOT NULL,
-    transaction_type TEXT NOT NULL, 
-    amount INTEGER NOT NULL,
-    description TEXT,
-    date DATE NOT NULL,
-    FOREIGN KEY (wedding_id) REFERENCES wedding(id)
-);
+-- CREATE TABLE IF NOT EXISTS transactions (
+--     id INTEGER PRIMARY KEY,
+--     wedding_id INTEGER NOT NULL,
+--     transaction_type TEXT NOT NULL, 
+--     amount INTEGER NOT NULL,
+--     description TEXT,
+--     date DATE NOT NULL,
+--     FOREIGN KEY (wedding_id) REFERENCES wedding(id)
+-- );
 -- CREATE TABLE guest (
 --     id INTEGER PRIMARY KEY,
 --     first_name TEXT,
@@ -38,3 +38,4 @@ CREATE TABLE IF NOT EXISTS transactions (
 --     wedding_id INTEGER,
 --     FOREIGN KEY (wedding_id) REFERENCES wedding (id)
 -- );
+DELETE FROM users WHERE username = 'Testuser';
