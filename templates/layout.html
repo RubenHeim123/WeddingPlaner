@@ -31,7 +31,7 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
                     {% if session["user_id"] %}
-                        {% if session["wedding_id"] and request.path != '/' %}
+                        {% if session["wedding_id"] and request.path != '/' and request.path != '/new_project' %}
                             <ul class="navbar-nav me-auto mt-2">
                                 <li class="nav-item"><a class="nav-link" href="/checklist">Checklist</a></li>
                                 <li class="nav-item"><a class="nav-link" href="/guest">Guest</a></li>
